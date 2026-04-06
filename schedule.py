@@ -6,8 +6,8 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes
 
 from config import TIMEZONE
-from database.db import get_db
-from utils.aniwatch import get_schedule, get_episodes, search_anime
+from db import get_db
+from helpers import is_admin, is_owner, mention
 from utils.helpers import truncate
 
 logger = logging.getLogger(__name__)
