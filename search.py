@@ -6,12 +6,9 @@ from telegram import (
 )
 from telegram.ext import ContextTypes
 
-from utils.aniwatch import search_anime, get_anime_info, get_episodes
-from utils.helpers import (
-    check_subscription, register_user, FORCE_SUB_TEXT,
-    build_episodes_keyboard, truncate,
-)
-from database.db import get_db
+from aniwatch import search_anime, get_anime_info, get_episodes
+from helpers import check_subscription, register_user, FORCE_SUB_TEXT, build_episodes_keyboard, truncate
+from db import get_db
 
 logger = logging.getLogger(__name__)
 
