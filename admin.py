@@ -8,8 +8,8 @@ from telegram import Update
 from telegram.ext import ContextTypes
 
 from config import OWNER_ID, LOG_CHANNEL
-from database.db import get_db
-from utils.helpers import is_admin, is_owner, mention
+from db import get_db
+from helpers import is_admin, is_owner, mention
 
 logger = logging.getLogger(__name__)
 
