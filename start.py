@@ -3,10 +3,8 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes
 
 from config import START_TEXT, HELP_TEXT
-from utils.helpers import (
-    check_subscription, register_user, FORCE_SUB_TEXT
-)
-from database.db import get_db
+from helpers import check_subscription, register_user, FORCE_SUB_TEXT
+from db import get_db
 
 logger = logging.getLogger(__name__)
 
