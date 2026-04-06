@@ -5,22 +5,15 @@ from telegram.ext import (
     Application, CommandHandler, CallbackQueryHandler,
     MessageHandler, filters, InlineQueryHandler
 )
-from config import BOT_TOKEN, LOG_CHANNEL
-from handlers.start import start_cmd, help_cmd
-from handlers.search import search_cmd, inline_query_handler
-from handlers.download import (
-    button_handler, quality_handler,
-    episode_handler, server_handler
-)
-from handlers.admin import (
-    broadcast_cmd, ban_cmd, unban_cmd,
-    restart_cmd, ping_cmd, stats_cmd,
-    add_admin_cmd, remove_admin_cmd, logs_cmd
-)
-from handlers.manage import manage_cmd
-from handlers.schedule import schedule_cmd, track_cmd, untrack_cmd
-from handlers.autodel import autodel_cmd
-from database.db import Database
+from config import BOT_TOKEN
+from start import start_cmd, help_cmd
+from search import search_cmd, inline_query_handler
+from download import button_handler, quality_handler, episode_handler, server_handler
+from admin import broadcast_cmd, ban_cmd, unban_cmd, restart_cmd, ping_cmd, stats_cmd, add_admin_cmd, remove_admin_cmd, logs_cmd
+from manage import manage_cmd
+from schedule import schedule_cmd, track_cmd, untrack_cmd, check_airing
+from autodel import autodel_cmd
+from db import Database, get_db
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -32,22 +25,11 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-db = Database()
+db = get_db()
 
 
 async def post_init(app: Application):
     await db.connect()
-    bot = app.bot
-    try:
-        if LOG_CHANNEL:
-            await bot.send_message(
-                LOG_CHANNEL,
-                "✅ <b>CANTARELLA Bot Started!</b>\n\n"
-                "🌸 <i>AniwatchTv Downloader is now online.</i>",
-                parse_mode="HTML"
-            )
-    except Exception as e:
-        logger.warning(f"Could not send startup message: {e}")
     logger.info("✅ CANTARELLA Bot Started Successfully!")
 
 
@@ -65,7 +47,6 @@ def main():
         .build()
     )
 
-    # ── Commands ──────────────────────────────────────────────────
     app.add_handler(CommandHandler("start", start_cmd))
     app.add_handler(CommandHandler("help", help_cmd))
     app.add_handler(CommandHandler("search", search_cmd))
@@ -84,29 +65,20 @@ def main():
     app.add_handler(CommandHandler("removeadmin", remove_admin_cmd))
     app.add_handler(CommandHandler("logs", logs_cmd))
 
-    # ── Inline query ──────────────────────────────────────────────
     app.add_handler(InlineQueryHandler(inline_query_handler))
 
-    # ── Callback queries ──────────────────────────────────────────
-    app.add_handler(CallbackQueryHandler(episode_handler,  pattern=r"^eps\|"))
-    app.add_handler(CallbackQueryHandler(quality_handler,  pattern=r"^qual\|"))
-    app.add_handler(CallbackQueryHandler(server_handler,   pattern=r"^srv\|"))
-    app.add_handler(CallbackQueryHandler(button_handler))   # catch-all
+    app.add_handler(CallbackQueryHandler(episode_handler, pattern=r"^eps\|"))
+    app.add_handler(CallbackQueryHandler(quality_handler, pattern=r"^qual\|"))
+    app.add_handler(CallbackQueryHandler(server_handler,  pattern=r"^srv\|"))
+    app.add_handler(CallbackQueryHandler(button_handler))
 
-    # ── Plain messages → search ───────────────────────────────────
-    app.add_handler(
-        MessageHandler(filters.TEXT & ~filters.COMMAND, search_cmd)
-    )
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, search_cmd))
 
-    # ── Job queue: anime schedule tracker ────────────────────────
     jq = app.job_queue
     if jq:
         jq.run_repeating(
-            callback=lambda ctx: asyncio.create_task(
-                __import__("handlers.schedule", fromlist=["check_airing"])
-                .check_airing(ctx)
-            ),
-            interval=3600,   # every hour
+            callback=lambda ctx: asyncio.create_task(check_airing(ctx)),
+            interval=3600,
             first=60,
             name="schedule_tracker",
         )
